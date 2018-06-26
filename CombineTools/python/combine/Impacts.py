@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, stat
+import sys, os, stat, re
 import json
 import ROOT
 import CombineHarvester.CombineTools.combine.utils as utils
@@ -30,6 +30,8 @@ class Impacts(CombineToolBase):
             input workspace. Use this option to specify a different list""")
         group.add_argument('--exclude', metavar='PARAM1,PARAM2,...', help=""" Skip
             these nuisances""")
+        group.add_argument('--rexclude', metavar='PARAM1,PARAM2,...', help=""" Skip
+            these nuisances (regexp)""")
         group.add_argument('--doInitialFit', action='store_true', help="""Find
             the crossings of all the POIs. Must have the output from this
             before running with --doFits""")
@@ -95,6 +97,13 @@ class Impacts(CombineToolBase):
         if self.args.exclude is not None:
             exclude = self.args.exclude.split(',')
             paramList = [x for x in paramList if x not in exclude]
+        if self.args.rexclude is not None:
+            regexps = [ re.compile(_+"$") for _ in self.args.rexclude.split(',') ]
+            for p in paramList[:]:
+                for r in regexps:
+                    if re.match(r,p):
+                        paramList.remove(p)
+                        break
 
         print 'Have nuisance parameters: ' + str(len(paramList))
         prefit = utils.prefit_from_workspace(ws, 'w', paramList, self.args.setPhysicsModelParameters)
