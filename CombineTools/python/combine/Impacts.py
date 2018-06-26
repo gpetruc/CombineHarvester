@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys
+import sys, os, stat
 import json
 import ROOT
 import CombineHarvester.CombineTools.combine.utils as utils
@@ -41,6 +41,7 @@ class Impacts(CombineToolBase):
         group.add_argument('--allPars', action='store_true', help="""Run the
             impacts for all free parameters of the model, not just those
             listed as nuisance parameters""")
+        group.add_argument('--rerun', action='store_true', help="""Re-run the ones for which the inputs are missing""")
         group.add_argument('--output', '-o', help="""write output json to a
             file""")
 
@@ -109,6 +110,12 @@ class Impacts(CombineToolBase):
             pres.update(prefit[param])
             # print 'Doing param ' + str(counter) + ': ' + param
             if self.args.doFits:
+                if self.args.rerun:
+                    fname = "higgsCombine_paramFit_%(name)s_%(param)s.MultiDimFit.mH%(mh)s.root" % vars()
+                    if os.path.exists(fname):
+                        if os.stat(fname)[stat.ST_SIZE] > 2000:
+                            print "Will not remake %s" % fname
+                            continue
                 self.job_queue.append(
                     'combine -M MultiDimFit -n _paramFit_%(name)s_%(param)s --algo impact --redefineSignalPOIs %(poistr)s -P %(param)s --floatOtherPOIs 1 --saveInactivePOI 1 %(pass_str)s' % vars())
             else:
